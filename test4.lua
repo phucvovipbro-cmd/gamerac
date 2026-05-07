@@ -1,20 +1,30 @@
 local gui = game.Players.LocalPlayer.PlayerGui
 local ls = gui:FindFirstChild("LoadingScreen")
 if ls then
+    print("Co LoadingScreen")
     local lf = ls:FindFirstChild("LoadingFrame")
     if lf then
-        print("=== LoadingFrame children ===")
-        for _, child in ipairs(lf:GetChildren()) do
+        print("Co LoadingFrame")
+        for _, child in ipairs(lf:GetDescendants()) do
             local txt = ""
             pcall(function() txt = child.Text end)
-            print(child.ClassName .. " | " .. child.Name .. " | Visible=" .. tostring(child.Visible) .. " | Text='" .. txt .. "'")
+            if child:IsA("TextButton") or child:IsA("ImageButton") or child:IsA("Frame") then
+                print(child.ClassName .. " | " .. child.Name .. " | Visible=" .. tostring(child.Visible) .. " | Text='" .. txt .. "' | Size=" .. tostring(child.AbsoluteSize))
+            end
         end
     else
-        print("Khong co LoadingFrame!")
-        for _, child in ipairs(ls:GetChildren()) do
-            print("LS child: " .. child.ClassName .. " | " .. child.Name)
+        print("KHONG co LoadingFrame, scan LoadingScreen:")
+        for _, child in ipairs(ls:GetDescendants()) do
+            local txt = ""
+            pcall(function() txt = child.Text end)
+            if child:IsA("TextButton") or child:IsA("ImageButton") then
+                print(child.ClassName .. " | " .. child.Name .. " | Text='" .. txt .. "'")
+            end
         end
     end
 else
-    print("Khong co LoadingScreen!")
+    print("KHONG co LoadingScreen!")
+    for _, g in ipairs(gui:GetChildren()) do
+        print("GUI child: " .. g.Name)
+    end
 end
