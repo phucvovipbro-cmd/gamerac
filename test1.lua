@@ -5,9 +5,10 @@
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local VIM = game:GetService("VirtualInputManager")
+local VirtualUser = game:GetService("VirtualUser")
 local CoreGui = game:GetService("CoreGui")
 
-local keywords = {"play", "start", "ready", "bắt", "bat", "enter", "join", "continue", "next"}
+local keywords = {"play", "start", "ready", "chơi", "bắt đầu", "bắt", "bat", "enter", "join", "continue", "next", "tham gia"}
 
 local function lower(text)
     return text and tostring(text):lower() or ""
@@ -30,6 +31,24 @@ local function getTextValue(obj)
         return obj.Name
     end
     return obj.Name
+end
+
+local function getGuiObjectVisible(obj)
+    local ok, visible = pcall(function()
+        return obj.Visible
+    end)
+    if ok then
+        return visible
+    end
+
+    ok, visible = pcall(function()
+        return obj.Enabled
+    end)
+    if ok then
+        return visible
+    end
+
+    return true
 end
 
 local function findClickableAncestor(obj, stopAt)
@@ -62,7 +81,7 @@ local function scanContainer(root)
         end)
         if ok and isGuiObject then
             ok, visible = pcall(function()
-                return obj.Visible
+                return getGuiObjectVisible(obj)
             end)
             if ok and visible then
                 ok, name = pcall(function()
@@ -162,6 +181,11 @@ local function clickButton(button)
             VIM:SendMouseButtonEvent(x, y, 0, true, game, 0)
             task.wait(0.05)
             VIM:SendMouseButtonEvent(x, y, 0, false, game, 0)
+        end)
+        pcall(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new(x, y))
+            task.wait(0.05)
         end)
     else
         warn("Button không có AbsolutePosition/AbsoluteSize: " .. button:GetFullName())
