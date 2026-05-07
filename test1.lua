@@ -1,46 +1,66 @@
--- Script lấy UI "PLAY NOW" và in ra Console (LocalScript)
+-- LocalScript - Safe UI Scanner cho Asura
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
 
--- Hàm tìm kiếm đệ quy tất cả UI elements
-local function findUIElements(parent, results)
-    results = results or {}
-    for _, child in ipairs(parent:GetChildren()) do
-        -- Kiểm tra nếu là TextButton hoặc TextLabel
+print("[START] Waiting for PlayerGui...")
+
+-- Chờ PlayerGui
+local playerGui = player:WaitForChild("PlayerGui", 10)
+
+if not playerGui then
+    warn("[ERROR] PlayerGui not found!")
+    return
+end
+
+-- Hàm tìm đệ quy an toàn
+local function scanUI(parent, depth)
+    depth = depth or 0
+    local indent = string.rep("  ", depth)
+    
+    local ok, children = pcall(function()
+        return parent:GetChildren()
+    end)
+    
+    if not ok then return end
+    
+    for _, child in ipairs(children) do
+        -- In tất cả elements
+        local text = ""
         if child:IsA("TextButton") or child:IsA("TextLabel") then
-            table.insert(results, {
-                Name = child.Name,
-                Text = child.Text,
-                ClassName = child.ClassName,
-                Path = child:GetFullName()
-            })
+            local ok2, t = pcall(function() return child.Text end)
+            text = ok2 and t or "(error reading text)"
+            
+            -- Highlight PLAY NOW
+            if string.find(string.upper(text), "PLAY") then
+                warn(">>> [PLAY NOW FOUND] <<<")
+                warn("    Name: " .. tostring(child.Name))
+                warn("    Text: " .. tostring(text))
+                warn("    Path: " .. tostring(child:GetFullName()))
+            else
+                print(indent .. "[" .. child.ClassName .. "] " .. child.Name .. ' | "' .. text .. '"')
+            end
+        else
+            print(indent .. "[" .. child.ClassName .. "] " .. child.Name)
         end
-        -- Đệ quy vào các children
-        findUIElements(child, results)
+        
+        -- Đệ quy
+        scanUI(child, depth + 1)
     end
-    return results
 end
 
--- Chờ GUI load xong
-task.wait(3)
-
-print("===== SCANNING UI =====")
-
-local allElements = findUIElements(playerGui)
-
-for _, elem in ipairs(allElements) do
-    -- Lọc riêng "PLAY NOW"
-    if string.find(string.upper(elem.Text), "PLAY NOW") then
-        print("[FOUND] PLAY NOW Button!")
-        print("  Name     : " .. elem.Name)
-        print("  Text     : " .. elem.Text)
-        print("  Class    : " .. elem.ClassName)
-        print("  FullPath : " .. elem.Path)
+-- Thử nhiều lần nếu GUI chưa load
+for i = 1, 5 do
+    print("[SCAN #" .. i .. "] Scanning PlayerGui...")
+    
+    local count = #playerGui:GetChildren()
+    print("  Found " .. count .. " top-level GUI objects")
+    
+    if count > 0 then
+        scanUI(playerGui)
+        print("[DONE] Scan complete!")
+        break
     else
-        -- In tất cả UI còn lại
-        print("[UI] " .. elem.ClassName .. " | Text: '" .. elem.Text .. "' | Path: " .. elem.Path)
+        print("  GUI empty, waiting 2s...")
+        task.wait(2)
     end
 end
-
-print("===== SCAN COMPLETE =====")
