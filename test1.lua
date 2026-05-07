@@ -1,29 +1,15 @@
-local Players = game:GetService("Players")
-local StarterGui = game:GetService("StarterGui")
-
-local lp = Players.LocalPlayer
-local pg = lp:FindFirstChild("PlayerGui")
-
-if not pg then
-    warn("Không tìm thấy PlayerGui")
-    return
-end
+local pg = game.Players.LocalPlayer.PlayerGui
 
 for _, v in pairs(pg:GetDescendants()) do
     if v.ClassName == "TextButton" then
-        local txt = tostring(v.Text)
-
-        if string.find(string.lower(txt), "play") then
-            local path = v:GetFullName()
-            warn("FOUND:", path)
-
-            pcall(function()
-                StarterGui:SetCore("SendNotification", {
-                    Title = "FOUND PLAY",
-                    Text = path,
-                    Duration = 10
-                })
-            end)
-        end
+        warn("TEXTBUTTON:", v.Name, v.Text, v:GetFullName())
+    end
+    
+    if v.ClassName == "TextLabel" then
+        warn("TEXTLABEL:", v.Name, v.Text, v:GetFullName())
+    end
+    
+    if v.ClassName == "ImageButton" then
+        warn("IMAGEBUTTON:", v.Name, v:GetFullName())
     end
 end
