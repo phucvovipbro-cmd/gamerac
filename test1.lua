@@ -1,15 +1,11 @@
-local pg = game.Players.LocalPlayer.PlayerGui
+task.wait(5)
 
-for _, v in pairs(pg:GetDescendants()) do
-    if v.ClassName == "TextButton" then
-        warn("TEXTBUTTON:", v.Name, v.Text, v:GetFullName())
-    end
-    
-    if v.ClassName == "TextLabel" then
-        warn("TEXTLABEL:", v.Name, v.Text, v:GetFullName())
-    end
-    
-    if v.ClassName == "ImageButton" then
-        warn("IMAGEBUTTON:", v.Name, v:GetFullName())
-    end
+for _,v in pairs(game:GetDescendants()) do
+    pcall(function()
+        if v:IsA("TextButton") or v:IsA("TextLabel") then
+            if v.Text == "PLAY NOW" then
+                warn("FOUND:", v:GetFullName())
+            end
+        end
+    end)
 end
