@@ -1,14 +1,13 @@
-local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+local Players = game:GetService("Players")
+local lp = Players.LocalPlayer
+local pg = lp:WaitForChild("PlayerGui")
 
-for _,v in ipairs(PlayerGui:GetDescendants()) do
-    if v:IsA("TextButton") then
-        local text = v.Text or ""
-        warn("BUTTON:", v.Name, "| TEXT:", text, "| PATH:", v:GetFullName())
+for _, v in ipairs(pg:GetDescendants()) do
+    if v.ClassName == "TextButton" then
+        warn("TEXTBUTTON |", v.Name, "|", v.Text, "|", v:GetFullName())
+    end
 
-        if string.lower(text) == "play now" then
-            warn("FOUND PLAY NOW:", v:GetFullName())
-        end
-    elseif v:IsA("ImageButton") then
-        warn("IMAGEBUTTON:", v.Name, "| PATH:", v:GetFullName())
+    if v.ClassName == "ImageButton" then
+        warn("IMAGEBUTTON |", v.Name, "|", v:GetFullName())
     end
 end
