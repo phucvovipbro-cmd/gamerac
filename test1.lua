@@ -46,7 +46,7 @@ end
 local function scanContainer(root)
     local candidates = {}
     for _, obj in ipairs(root:GetDescendants()) do
-        if obj.Visible then
+        if obj:IsA("GuiObject") and obj.Visible then
             local nameMatch = hasKeyword(obj.Name)
             local textMatch = hasKeyword(getTextValue(obj))
             if nameMatch or textMatch then
