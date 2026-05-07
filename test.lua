@@ -1,20 +1,16 @@
--- LocalScript trong StarterPlayerScripts
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
 
-player.CharacterAdded:Connect(function(character)
-    local humanoid = character:WaitForChild("Humanoid")
-    local hrp = character:WaitForChild("HumanoidRootPart")
+local safezone = true
 
-    task.wait(2) -- đợi nhân vật load xong
-
-    -- Tăng tốc độ đi bộ tạm thời
-    humanoid.WalkSpeed = 8
-
-    -- Cho nhân vật bước ra phía trước một chút
-    humanoid:Move(Vector3.new(0,0,-1), true)
-
-    -- Dừng sau 0.5 giây để chỉ nhích nhẹ
-    task.wait(0.5)
-    humanoid:Move(Vector3.new(0,0,0), true)
+humanoid.Running:Connect(function(speed)
+	if speed > 0 and safezone then
+		safezone = false
+		print("Đã rời safezone!")
+		
+		-- Ví dụ:
+		-- tắt forcefield
+		-- bật PvP
+	end
 end)
