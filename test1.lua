@@ -1,66 +1,71 @@
--- LocalScript - Safe UI Scanner cho Asura
+-- LocalScript: Chờ GUI load hoàn toàn rồi mới scan
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui", 15)
 
-print("[START] Waiting for PlayerGui...")
+print("[ASURA SCANNER] Started...")
 
--- Chờ PlayerGui
-local playerGui = player:WaitForChild("PlayerGui", 10)
-
-if not playerGui then
-    warn("[ERROR] PlayerGui not found!")
-    return
-end
-
--- Hàm tìm đệ quy an toàn
-local function scanUI(parent, depth)
-    depth = depth or 0
-    local indent = string.rep("  ", depth)
-    
-    local ok, children = pcall(function()
-        return parent:GetChildren()
-    end)
-    
-    if not ok then return end
-    
-    for _, child in ipairs(children) do
-        -- In tất cả elements
-        local text = ""
-        if child:IsA("TextButton") or child:IsA("TextLabel") then
-            local ok2, t = pcall(function() return child.Text end)
-            text = ok2 and t or "(error reading text)"
-            
-            -- Highlight PLAY NOW
-            if string.find(string.upper(text), "PLAY") then
-                warn(">>> [PLAY NOW FOUND] <<<")
-                warn("    Name: " .. tostring(child.Name))
-                warn("    Text: " .. tostring(text))
-                warn("    Path: " .. tostring(child:GetFullName()))
-            else
-                print(indent .. "[" .. child.ClassName .. "] " .. child.Name .. ' | "' .. text .. '"')
+-- Hàm scan toàn bộ
+local function scanForButtons(root)
+    local found = {}
+    local function recurse(obj)
+        if not obj then return end
+        local ok, kids = pcall(function() return obj:GetChildren() end)
+        if not ok then return end
+        for _, v in ipairs(kids) do
+            if v:IsA("TextButton") or v:IsA("ImageButton") then
+                local txt = ""
+                pcall(function() txt = v.Text end)
+                table.insert(found, {
+                    text = txt,
+                    name = v.Name,
+                    path = v:GetFullName()
+                })
             end
-        else
-            print(indent .. "[" .. child.ClassName .. "] " .. child.Name)
+            recurse(v)
         end
-        
-        -- Đệ quy
-        scanUI(child, depth + 1)
     end
+    recurse(root)
+    return found
 end
 
--- Thử nhiều lần nếu GUI chưa load
-for i = 1, 5 do
-    print("[SCAN #" .. i .. "] Scanning PlayerGui...")
-    
-    local count = #playerGui:GetChildren()
-    print("  Found " .. count .. " top-level GUI objects")
-    
-    if count > 0 then
-        scanUI(playerGui)
-        print("[DONE] Scan complete!")
-        break
-    else
-        print("  GUI empty, waiting 2s...")
-        task.wait(2)
+-- Chờ ít nhất 1 ScreenGui có nội dung
+local function waitForGUI()
+    for attempt = 1, 20 do
+        task.wait(1)
+        local guis = playerGui:GetChildren()
+        for _, gui in ipairs(guis) do
+            if gui:IsA("ScreenGui") then
+                local buttons = scanForButtons(gui)
+                if #buttons > 0 then
+                    print("[ATTEMPT " .. attempt .. "] GUI Ready! Found " .. #buttons .. " buttons in: " .. gui.Name)
+                    return true, buttons
+                end
+            end
+        end
+        print("[ATTEMPT " .. attempt .. "] Waiting... (" .. #guis .. " GUIs found so far)")
     end
+    return false, {}
+end
+
+local success, buttons = waitForGUI()
+
+if success then
+    print("========== ALL BUTTONS ==========")
+    for _, btn in ipairs(buttons) do
+        local upper = string.upper(btn.text or "")
+        if upper == "PLAY NOW" 
+        or upper == "CLOSED COMMUNITY" 
+        or upper == "PRIVATE SERVER" 
+        or upper == "RANKED" then
+            warn(">>> MENU BUTTON: [" .. btn.text .. "]")
+            warn("    Path: " .. btn.path)
+        else
+            print("- [" .. btn.name .. '] Text: "' .. btn.text .. '"')
+        end
+    end
+    print("=================================")
+else
+    warn("[FAIL] Could not find any buttons after 20 seconds.")
+    warn("Try running the script again after game fully loads.")
 end
