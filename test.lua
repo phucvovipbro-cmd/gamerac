@@ -1,16 +1,21 @@
 local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
 
-local safezone = true
+local function autoMove(character)
+	local humanoid = character:WaitForChild("Humanoid")
 
-humanoid.Running:Connect(function(speed)
-	if speed > 0 and safezone then
-		safezone = false
-		print("Đã rời safezone!")
-		
-		-- Ví dụ:
-		-- tắt forcefield
-		-- bật PvP
-	end
-end)
+	task.wait(1)
+
+	-- nhích nhẹ
+	humanoid:Move(Vector3.new(1,0,0), true)
+
+	task.wait(0.2)
+
+	-- dừng
+	humanoid:Move(Vector3.zero, true)
+end
+
+if player.Character then
+	autoMove(player.Character)
+end
+
+player.CharacterAdded:Connect(autoMove)
