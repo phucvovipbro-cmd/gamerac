@@ -45,20 +45,54 @@ end
 
 local function scanContainer(root)
     local candidates = {}
-    for _, obj in ipairs(root:GetDescendants()) do
-        if obj:IsA("GuiObject") and obj.Visible then
-            local nameMatch = hasKeyword(obj.Name)
-            local textMatch = hasKeyword(getTextValue(obj))
-            if nameMatch or textMatch then
-                local clickable = obj:IsA("GuiButton") and obj or findClickableAncestor(obj, root)
-                table.insert(candidates, {
-                    object = obj,
-                    path = obj:GetFullName(),
-                    className = obj.ClassName,
-                    text = getTextValue(obj),
-                    clickable = clickable and clickable:GetFullName() or "(none)",
-                    rootName = root.Name,
-                })
+    local descendants = {}
+    pcall(function()
+        descendants = root:GetDescendants()
+    end)
+
+    for _, obj in ipairs(descendants) do
+        local isGuiObject = false
+        local visible = false
+        local name = nil
+        local textValue = nil
+        local className = nil
+
+        local ok = pcall(function()
+            isGuiObject = obj:IsA("GuiObject")
+        end)
+        if ok and isGuiObject then
+            ok, visible = pcall(function()
+                return obj.Visible
+            end)
+            if ok and visible then
+                ok, name = pcall(function()
+                    return obj.Name
+                end)
+                if ok then
+                    ok, textValue = pcall(function()
+                        return getTextValue(obj)
+                    end)
+                    if ok then
+                        ok, className = pcall(function()
+                            return obj.ClassName
+                        end)
+                        if ok then
+                            local nameMatch = hasKeyword(name)
+                            local textMatch = hasKeyword(textValue)
+                            if nameMatch or textMatch then
+                                local clickable = obj:IsA("GuiButton") and obj or findClickableAncestor(obj, root)
+                                table.insert(candidates, {
+                                    object = obj,
+                                    path = obj:GetFullName(),
+                                    className = className,
+                                    text = textValue,
+                                    clickable = clickable and clickable:GetFullName() or "(none)",
+                                    rootName = root.Name,
+                                })
+                            end
+                        end
+                    end
+                end
             end
         end
     end
