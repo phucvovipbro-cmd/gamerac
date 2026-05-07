@@ -1,12 +1,13 @@
 -- find_play_now.lua
--- Script kiểm tra PlayerGui để tìm Play/Start/Ready button chuẩn.
+-- Script kiểm tra PlayerGui/CoreGui để tìm nút Play/Start/Ready chuẩn.
 -- Chạy trong môi trường LocalScript trên Roblox.
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local VIM = game:GetService("VirtualInputManager")
+local CoreGui = game:GetService("CoreGui")
 
-local keywords = {"play", "start", "ready", "bắt", "bat", "enter"}
+local keywords = {"play", "start", "ready", "bắt", "bat", "enter", "join", "continue", "next"}
 
 local function lower(text)
     return text and tostring(text):lower() or ""
@@ -22,6 +23,15 @@ local function hasKeyword(text)
     return false
 end
 
+local function getTextValue(obj)
+    if obj:IsA("TextButton") or obj:IsA("TextLabel") or obj:IsA("TextBox") then
+        return obj.Text
+    elseif obj:IsA("ImageButton") or obj:IsA("ImageLabel") then
+        return obj.Name
+    end
+    return obj.Name
+end
+
 local function findClickableAncestor(obj, stopAt)
     local current = obj
     while current and current ~= stopAt do
@@ -33,61 +43,75 @@ local function findClickableAncestor(obj, stopAt)
     return nil
 end
 
-local function FindPlayButton()
-    local gui = player:FindFirstChild("PlayerGui")
-    if not gui then
-        warn("PlayerGui chưa tồn tại")
-        return nil
-    end
-
+local function scanContainer(root)
     local candidates = {}
-
-    for _, obj in ipairs(gui:GetDescendants()) do
+    for _, obj in ipairs(root:GetDescendants()) do
         if obj.Visible then
             local nameMatch = hasKeyword(obj.Name)
-            local textMatch = hasKeyword(obj:IsA("TextButton") and obj.Text or obj:IsA("TextLabel") and obj.Text or obj:IsA("ImageLabel") and obj.Name or obj.Name)
+            local textMatch = hasKeyword(getTextValue(obj))
             if nameMatch or textMatch then
-                local clickable = obj:IsA("GuiButton") and obj or findClickableAncestor(obj, gui)
+                local clickable = obj:IsA("GuiButton") and obj or findClickableAncestor(obj, root)
                 table.insert(candidates, {
                     object = obj,
                     path = obj:GetFullName(),
                     className = obj.ClassName,
-                    text = (obj:IsA("TextButton") or obj:IsA("TextLabel")) and obj.Text or "",
+                    text = getTextValue(obj),
                     clickable = clickable and clickable:GetFullName() or "(none)",
+                    rootName = root.Name,
                 })
             end
         end
     end
+    return candidates
+end
 
-    if #candidates == 0 then
+local function FindPlayButton()
+    if not player then
+        warn("LocalPlayer không tồn tại. Chỉ chạy dưới client (LocalScript).")
         return nil
     end
 
-    for _, data in ipairs(candidates) do
-        print("[PlayCandidate] ", data.path, "class=", data.className, "text=", data.text, "clickable=", data.clickable)
+    local allCandidates = {}
+    local gui = player:FindFirstChild("PlayerGui")
+    if gui then
+        for _, c in ipairs(scanContainer(gui)) do
+            table.insert(allCandidates, c)
+        end
+    else
+        warn("PlayerGui chưa tồn tại.")
     end
 
-    -- Ưu tiên GuiButton hoặc ImageButton trực tiếp có keyword
-    for _, data in ipairs(candidates) do
-        if data.object:IsA("GuiButton") then
+    local coreCandidates = scanContainer(CoreGui)
+    for _, c in ipairs(coreCandidates) do
+        table.insert(allCandidates, c)
+    end
+
+    if #allCandidates == 0 then
+        return nil
+    end
+
+    for _, data in ipairs(allCandidates) do
+        print(string.format("[PlayCandidate][%s] path=%s class=%s text=%s clickable=%s",
+            data.rootName, data.path, data.className, tostring(data.text), data.clickable))
+    end
+
+    for _, data in ipairs(allCandidates) do
+        if data.object:IsA("GuiButton") or data.object:IsA("ImageButton") then
             return data.object
         end
     end
 
-    -- Nếu có clickable ancestor thì trả về button đó
-    for _, data in ipairs(candidates) do
-        local obj = data.object
-        local clickable = findClickableAncestor(obj, gui)
+    for _, data in ipairs(allCandidates) do
+        local clickable = findClickableAncestor(data.object, player.PlayerGui or CoreGui)
         if clickable then
             return clickable
         end
     end
 
-    -- Trả về candidate đầu tiên nếu không có button rõ ràng
-    return candidates[1].object
+    return allCandidates[1].object
 end
 
-local function ClickButton(button)
+local function clickButton(button)
     if not button then
         warn("Không có nút để click")
         return false
@@ -105,13 +129,20 @@ local function ClickButton(button)
             task.wait(0.05)
             VIM:SendMouseButtonEvent(x, y, 0, false, game, 0)
         end)
+    else
+        warn("Button không có AbsolutePosition/AbsoluteSize: " .. button:GetFullName())
     end
-    print("Đã thử click lên: ", button:GetFullName())
+    print("Đã thử click lên: " .. button:GetFullName())
     return true
 end
 
 local function Run()
     print("========== Find Play Now Script ==========")
+    if not player then
+        warn("Không tìm được LocalPlayer. Chỉ chạy LocalScript.")
+        return
+    end
+
     local gui = player:WaitForChild("PlayerGui", 10)
     if not gui then
         warn("Không tìm được PlayerGui sau 10s")
@@ -120,12 +151,12 @@ local function Run()
 
     local button = FindPlayButton()
     if not button then
-        warn("Không tìm thấy Play/Start button nào")
+        warn("Không tìm thấy Play/Start button nào trong PlayerGui/CoreGui")
         return
     end
 
-    print("Tìm thấy button: ", button:GetFullName(), " class=", button.ClassName)
-    ClickButton(button)
+    print("Tìm thấy button: " .. button:GetFullName() .. " class=" .. button.ClassName)
+    clickButton(button)
 end
 
 Run()
