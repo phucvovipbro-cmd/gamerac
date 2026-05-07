@@ -1,17 +1,16 @@
 -- LocalScript trong StarterPlayerScripts
 local Players = game:GetService("Players")
-
 local player = Players.LocalPlayer
 
 player.CharacterAdded:Connect(function(character)
-    character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+    local hrp = character:WaitForChild("HumanoidRootPart")
 
-    -- Đợi nhân vật load xong
-    task.wait(1)
+    task.wait(2) -- đợi nhân vật spawn hoàn toàn
 
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        -- Dịch chuyển nhẹ về phía trước (nhích 0.5 stud)
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, 0, -0.5)
-    end
+    -- Cách 1: MoveTo nhích nhẹ
+    humanoid:MoveTo(hrp.Position + Vector3.new(0, 0, -0.5))
+
+    -- Cách 2: SetWalkSpeed rồi Move
+    -- humanoid:Move(Vector3.new(0,0,-1), true)
 end)
