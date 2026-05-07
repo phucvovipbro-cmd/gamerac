@@ -1,21 +1,20 @@
-local player = game.Players.LocalPlayer
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 
-local function autoMove(character)
+local function nudge(character)
 	local humanoid = character:WaitForChild("Humanoid")
+	local root = character:WaitForChild("HumanoidRootPart")
 
 	task.wait(1)
 
-	-- nhích nhẹ
-	humanoid:Move(Vector3.new(1,0,0), true)
+	-- đi nhích 2 stud về phía trước
+	local targetPos = root.Position + root.CFrame.LookVector * 2
 
-	task.wait(0.2)
-
-	-- dừng
-	humanoid:Move(Vector3.zero, true)
+	humanoid:MoveTo(targetPos)
 end
 
 if player.Character then
-	autoMove(player.Character)
+	nudge(player.Character)
 end
 
-player.CharacterAdded:Connect(autoMove)
+player.CharacterAdded:Connect(nudge)
