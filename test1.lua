@@ -1,5 +1,3 @@
-wait(8)
-
 local gui = game.Players.LocalPlayer.PlayerGui
 
 local function scan(obj)
